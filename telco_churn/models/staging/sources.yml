@@ -1,0 +1,63 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Raw CSV files from the Kaggle Playground Series S6E3 competition.
+      Source files live in data/raw/ relative to the project root.
+      Competition URL: https://www.kaggle.com/competitions/playground-series-s6e3
+    meta:
+      owner: "@analytics-engineer"
+
+    tables:
+      - name: train
+        description: >
+          Training dataset with 594,194 rows and 21 columns including the target variable Churn.
+          Generated synthetically from the Telco Customer Churn dataset.
+        columns:
+          - name: id
+            description: Row identifier (not a meaningful customer ID)
+          - name: gender
+            description: Customer gender — Male or Female
+          - name: SeniorCitizen
+            description: Whether the customer is a senior citizen — 0 (No) or 1 (Yes)
+          - name: Partner
+            description: Whether the customer has a partner — Yes or No
+          - name: Dependents
+            description: Whether the customer has dependents — Yes or No
+          - name: tenure
+            description: Number of months the customer has been with the company (0–72)
+          - name: PhoneService
+            description: Whether the customer has a phone service — Yes or No
+          - name: MultipleLines
+            description: Whether the customer has multiple phone lines — Yes / No / No phone service
+          - name: InternetService
+            description: Customer's internet service provider — DSL / Fiber optic / No
+          - name: OnlineSecurity
+            description: Whether customer has online security add-on — Yes / No / No internet service
+          - name: OnlineBackup
+            description: Whether customer has online backup add-on — Yes / No / No internet service
+          - name: DeviceProtection
+            description: Whether customer has device protection add-on — Yes / No / No internet service
+          - name: TechSupport
+            description: Whether customer has tech support add-on — Yes / No / No internet service
+          - name: StreamingTV
+            description: Whether customer streams TV — Yes / No / No internet service
+          - name: StreamingMovies
+            description: Whether customer streams movies — Yes / No / No internet service
+          - name: Contract
+            description: Contract term — Month-to-month / One year / Two year
+          - name: PaperlessBilling
+            description: Whether the customer uses paperless billing — Yes or No
+          - name: PaymentMethod
+            description: Payment method — Electronic check / Mailed check / Bank transfer (automatic) / Credit card (automatic)
+          - name: MonthlyCharges
+            description: Monthly amount charged to the customer
+          - name: TotalCharges
+            description: Total amount charged over the customer's tenure. Blank when tenure=0.
+          - name: Churn
+            description: "TARGET — Whether the customer churned: Yes (churned) or No (retained)"
+
+      - name: test
+        description: >
+          Test dataset for generating competition submission. Same columns as train minus Churn.

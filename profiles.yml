@@ -1,0 +1,10 @@
+telco_churn:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Database file created at project root; path is relative to where `dbt run` is invoked.
+      # Always run dbt from the kaggle_competition/ directory:
+      #   dbt run --project-dir telco_churn --profiles-dir .
+      path: telco_churn.duckdb
+      threads: 4

@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: int_churn_features
+    description: >
+      Intermediate model: all feature engineering for the churn prediction model.
+      Extends stg_customers with derived business features. The ML notebook reads
+      from fct_churn_features (which selects from this model) — no feature
+      engineering happens in Python.
+    columns:
+      - name: customer_id
+        description: Row identifier (pass-through from staging)
+        tests:
+          - not_null
+          - unique
+
+      - name: tenure_group
+        description: >
+          Tenure bucketed into churn-risk cohorts (0-12 mo, 12-24 mo, 24-48 mo, 48+ mo).
+          Churn risk is highest in the first year and non-linear across the full range.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["0-12 mo", "12-24 mo", "24-48 mo", "48+ mo"]
+
+      - name: contract_risk_score
+        description: >
+          Ordinal encoding of contract commitment level.
+          Month-to-month=3 (highest risk), One year=2, Two year=1 (lowest risk).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3]
+
+      - name: charges_ratio
+        description: >
+          Monthly charges divided by tenure_months. Measures cost intensity
+          relative to loyalty duration. NULL when tenure_months = 0.
+
+      - name: service_count
+        description: >
+          Count of internet add-on services (0–6): OnlineSecurity, OnlineBackup,
+          DeviceProtection, TechSupport, StreamingTV, StreamingMovies.
+          Each additional service raises switching costs.
+        tests:
+          - not_null
+
+      - name: has_any_streaming
+        description: 1 if customer subscribes to StreamingTV or StreamingMovies, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_any_security
+        description: 1 if customer subscribes to OnlineSecurity or TechSupport, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: is_fiber_optic
+        description: 1 if internet_service is Fiber optic, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: is_electronic_check
+        description: 1 if payment_method is Electronic check, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: is_high_risk
+        description: >
+          Composite flag: 1 if customer is Month-to-month + Fiber optic + tenure < 12 months.
+          Identifies primary intervention targets for retention campaigns.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]

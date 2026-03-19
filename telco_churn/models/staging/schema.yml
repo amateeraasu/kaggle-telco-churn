@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: >
+      Staging model for raw customer data from the Kaggle S6E3 competition CSV.
+      Applies column renaming (snake_case), type casting, and binary normalization only.
+      No feature engineering — that belongs in int_churn_features.
+    columns:
+      - name: customer_id
+        description: Row identifier from the competition (not a meaningful customer ID)
+        tests:
+          - not_null
+          - unique
+
+      - name: gender
+        description: Customer gender
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Male", "Female"]
+
+      - name: is_senior_citizen
+        description: 1 if the customer is a senior citizen, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_partner
+        description: 1 if the customer has a partner, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_dependents
+        description: 1 if the customer has dependents, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: tenure_months
+        description: Number of months the customer has been with the company (0–72)
+        tests:
+          - not_null
+
+      - name: contract_type
+        description: Contract term length
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Month-to-month", "One year", "Two year"]
+
+      - name: has_paperless_billing
+        description: 1 if the customer uses paperless billing, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: payment_method
+        description: Payment method used by the customer
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - "Electronic check"
+                - "Mailed check"
+                - "Bank transfer (automatic)"
+                - "Credit card (automatic)"
+
+      - name: monthly_charges
+        description: Monthly billing amount in USD
+        tests:
+          - not_null
+
+      - name: total_charges
+        description: >
+          Total billing amount over the customer's tenure. NULL when tenure_months = 0
+          (customer has not yet been billed a full month).
+
+      - name: has_phone_service
+        description: 1 if the customer has phone service, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_multiple_lines
+        description: 1 if the customer has multiple phone lines, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: internet_service
+        description: Type of internet service subscribed
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["DSL", "Fiber optic", "No"]
+
+      - name: has_online_security
+        description: 1 if customer has online security add-on, 0 otherwise (includes no-internet customers)
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_online_backup
+        description: 1 if customer has online backup add-on, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_device_protection
+        description: 1 if customer has device protection add-on, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_tech_support
+        description: 1 if customer has tech support add-on, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_streaming_tv
+        description: 1 if customer subscribes to streaming TV, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: has_streaming_movies
+        description: 1 if customer subscribes to streaming movies, 0 otherwise
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: churn
+        description: "TARGET — 1 if the customer churned, 0 if retained"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
