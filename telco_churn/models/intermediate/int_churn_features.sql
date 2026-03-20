@@ -236,6 +236,60 @@ features as (
 
     from customers
 
+),
+
+extended as (
+
+    select
+        *,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: charges_diff
+        -- total_charges minus expected charges (monthly_charges × tenure_months).
+        -- A negative value signals billing anomaly or applied discounts —
+        -- a customer paying less than the rack rate may be on a promotional
+        -- plan that can be cancelled, increasing churn risk.
+        -- NULL when total_charges is null (brand-new customers not yet billed).
+        -- ------------------------------------------------------------------ --
+        case
+            when total_charges is not null
+                then total_charges - (monthly_charges * tenure_months)
+            else null
+        end as charges_diff,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: is_total_charges_missing
+        -- 1 when total_charges is null or zero — identifies brand-new customers
+        -- (tenure = 0 or 1 month) who have not yet been billed a full cycle.
+        -- These customers have the highest short-term churn risk.
+        -- ------------------------------------------------------------------ --
+        case
+            when total_charges is null or total_charges = 0 then 1
+            else 0
+        end as is_total_charges_missing,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: tenure_decay
+        -- 1.0 / (tenure_months + 1). Churn risk drops sharply after month 6;
+        -- this convex transform captures the non-linear curve without bucketing.
+        -- Especially useful for Logistic Regression, which cannot fit the
+        -- rapid early-tenure effect with a raw linear tenure term.
+        -- Always non-null: denominator is at least 1.
+        -- ------------------------------------------------------------------ --
+        1.0 / (tenure_months + 1) as tenure_decay,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: payment_friction
+        -- Interaction term: is_electronic_check × is_high_risk.
+        -- Electronic-check payers who are simultaneously high-risk (M2M +
+        -- Fiber optic + tenure < 12 months) represent a compound churn profile
+        -- that Logistic Regression cannot discover from the individual signals
+        -- alone — this explicit term gives it the combined effect directly.
+        -- ------------------------------------------------------------------ --
+        is_electronic_check * is_high_risk as payment_friction
+
+    from features
+
 )
 
-select * from features
+select * from extended

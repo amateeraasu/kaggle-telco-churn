@@ -105,3 +105,40 @@ models:
           as an atomic feature rather than learning the interaction implicitly.
         tests:
           - not_null
+
+      - name: charges_diff
+        description: >
+          total_charges minus (monthly_charges × tenure_months). A negative value signals
+          a billing anomaly or applied discount — customer paid less than rack rate,
+          which correlates with promotional plans that are easier to cancel.
+          NULL when total_charges is null (brand-new customers not yet billed).
+
+      - name: is_total_charges_missing
+        description: >
+          1 when total_charges is null or zero, 0 otherwise. Identifies brand-new customers
+          (tenure = 0 or 1 month) who have not been billed a full cycle — highest
+          short-term churn risk cohort.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+
+      - name: tenure_decay
+        description: >
+          1.0 / (tenure_months + 1). Convex transform that captures the rapid non-linear
+          drop in churn risk after the first 6 months. Especially valuable for
+          Logistic Regression, which cannot fit this curve with a raw linear tenure term.
+          Always non-null (denominator is at least 1).
+        tests:
+          - not_null
+
+      - name: payment_friction
+        description: >
+          Interaction term: is_electronic_check × is_high_risk. Captures the compound
+          churn profile of electronic-check payers who are simultaneously Month-to-month,
+          Fiber optic, and within their first 12 months. Gives Logistic Regression an
+          explicit handle on this interaction that it cannot discover from individual features.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]

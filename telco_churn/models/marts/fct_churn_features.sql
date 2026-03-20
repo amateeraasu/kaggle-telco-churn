@@ -86,6 +86,10 @@ final as (
         monthly_charges_bucket,   -- non-linear charge bands; $70-90 churns most
         services_per_dollar,      -- add-on density per $ spent (value perception)
         tenure_contract_segment,  -- crossed label e.g. 'M2M_0to12'
+        charges_diff,             -- total_charges - (monthly × tenure); negative = discount signal
+        is_total_charges_missing, -- 1 = brand-new customer not yet billed
+        tenure_decay,             -- 1/(tenure+1); captures non-linear early-churn curve
+        payment_friction,         -- is_electronic_check × is_high_risk (interaction term)
 
         -- ------------------------------------------------------------------ --
         -- Target (last by convention; absent from fct_churn_features_test)
