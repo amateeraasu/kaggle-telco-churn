@@ -221,6 +221,27 @@ models:
           - accepted_values:
               values: [0, 1]
 
+      - name: monthly_charges_bucket
+        description: >
+          Monthly charges bucketed into 6 bands capturing the non-linear churn relationship.
+          The $70-90 (mid_high) band churns most; low (<$30) and very_high (>=$100) churn less.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['low', 'mid_low', 'mid', 'mid_high', 'high', 'very_high']
+
+      - name: services_per_dollar
+        description: >
+          service_count / monthly_charges. Measures add-on density per dollar spent.
+          High ratio = good perceived value = lower churn propensity. NULL when monthly_charges = 0.
+
+      - name: tenure_contract_segment
+        description: >
+          Crossed label combining contract type and tenure cohort, e.g. 'M2M_0to12', '2yr_48plus'.
+          Makes the most dangerous combination explicitly visible to tree models and LR with target encoding.
+        tests:
+          - not_null
+
       # ------------------------------------------------------------------ #
       # Target
       # ------------------------------------------------------------------ #

@@ -11,19 +11,22 @@
   - Features are named to be self-documenting in SHAP plots
 
   Features added beyond the raw staging columns:
-  ┌──────────────────────────┬────────────────────────────────────────────────────────┐
-  │ Feature                  │ Business logic                                         │
-  ├──────────────────────────┼────────────────────────────────────────────────────────┤
-  │ tenure_group             │ Cohort buckets: churn risk is non-linear with tenure   │
-  │ contract_risk_score      │ Ordinal commitment signal: M2M=3, 1yr=2, 2yr=1        │
-  │ charges_ratio            │ Avg monthly spend intensity relative to tenure         │
-  │ service_count            │ Internet add-ons purchased (switching cost proxy)      │
-  │ has_any_streaming        │ Entertainment stickiness flag                          │
-  │ has_any_security         │ Security add-on stickiness flag                        │
-  │ is_fiber_optic           │ Fiber customers churn at higher rates                  │
-  │ is_electronic_check      │ Least committed payment type (manual, not auto)        │
-  │ is_high_risk             │ Composite worst-case flag for intervention targeting   │
-  └──────────────────────────┴────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────┬────────────────────────────────────────────────────────┐
+  │ Feature                      │ Business logic                                         │
+  ├──────────────────────────────┼────────────────────────────────────────────────────────┤
+  │ tenure_group                 │ Cohort buckets: churn risk is non-linear with tenure   │
+  │ contract_risk_score          │ Ordinal commitment signal: M2M=3, 1yr=2, 2yr=1        │
+  │ charges_ratio                │ Avg monthly spend intensity relative to tenure         │
+  │ service_count                │ Internet add-ons purchased (switching cost proxy)      │
+  │ has_any_streaming            │ Entertainment stickiness flag                          │
+  │ has_any_security             │ Security add-on stickiness flag                        │
+  │ is_fiber_optic               │ Fiber customers churn at higher rates                  │
+  │ is_electronic_check          │ Least committed payment type (manual, not auto)        │
+  │ is_high_risk                 │ Composite worst-case flag for intervention targeting   │
+  │ monthly_charges_bucket       │ Non-linear charge bands; $70-90 bracket churns most   │
+  │ services_per_dollar          │ Add-on density per $ spent; low = poor value perception│
+  │ tenure_contract_segment      │ Crossed label e.g. 'M2M_0to12'; explicit danger zone  │
+  └──────────────────────────────┴────────────────────────────────────────────────────────┘
 */
 
 {{ config(materialized='table') }}
@@ -167,7 +170,69 @@ features as (
              and tenure_months    < 12
             then 1
             else 0
-        end as is_high_risk
+        end as is_high_risk,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: monthly_charges_bucket
+        -- Monthly charges have a non-linear relationship with churn.
+        -- The $70–90 band churns most — customers paying enough to feel the
+        -- cost but not receiving commensurate value. Below $30 are basic-plan
+        -- customers with low expectations; above $100 are power users with
+        -- deep service investment, both of which churn less.
+        -- Buckets derived from EDA on the churn rate by charge decile.
+        -- ------------------------------------------------------------------ --
+        case
+            when monthly_charges <  30  then 'low'
+            when monthly_charges <  50  then 'mid_low'
+            when monthly_charges <  70  then 'mid'
+            when monthly_charges <  90  then 'mid_high'
+            when monthly_charges < 100  then 'high'
+            else                             'very_high'
+        end as monthly_charges_bucket,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: services_per_dollar
+        -- Add-on services subscribed divided by monthly charge.
+        -- Captures value perception: a customer paying $90 for 0 add-ons
+        -- feels overcharged relative to one paying $90 for 5 add-ons.
+        -- High ratio → good perceived value → lower churn propensity.
+        -- NULL when monthly_charges = 0 (edge case guard).
+        -- ------------------------------------------------------------------ --
+        case
+            when monthly_charges > 0
+                then round(
+                    (
+                        has_online_security  +
+                        has_online_backup    +
+                        has_device_protection +
+                        has_tech_support     +
+                        has_streaming_tv     +
+                        has_streaming_movies
+                    )::decimal / monthly_charges,
+                    4
+                )
+            else null
+        end as services_per_dollar,
+
+        -- ------------------------------------------------------------------ --
+        -- FEATURE: tenure_contract_segment
+        -- Crossed categorical combining the two strongest churn signals.
+        -- Lets tree models (and LR with target encoding) treat 'M2M_0to12'
+        -- as a single atomic label rather than learning the interaction
+        -- implicitly across splits. Naming convention: <contract>_<tenure>.
+        -- ------------------------------------------------------------------ --
+        case contract_type
+            when 'Month-to-month' then 'M2M'
+            when 'One year'       then '1yr'
+            when 'Two year'       then '2yr'
+        end
+        || '_' ||
+        case
+            when tenure_months between 0  and 11 then '0to12'
+            when tenure_months between 12 and 23 then '12to24'
+            when tenure_months between 24 and 47 then '24to48'
+            else                                      '48plus'
+        end as tenure_contract_segment
 
     from customers
 

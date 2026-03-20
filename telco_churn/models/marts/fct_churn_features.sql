@@ -83,6 +83,9 @@ final as (
         is_fiber_optic,           -- high-churn internet tier flag
         is_electronic_check,      -- manual payment = lower switching friction
         is_high_risk,             -- composite: M2M + fiber + tenure < 12 mo
+        monthly_charges_bucket,   -- non-linear charge bands; $70-90 churns most
+        services_per_dollar,      -- add-on density per $ spent (value perception)
+        tenure_contract_segment,  -- crossed label e.g. 'M2M_0to12'
 
         -- ------------------------------------------------------------------ --
         -- Target (last by convention; absent from fct_churn_features_test)
